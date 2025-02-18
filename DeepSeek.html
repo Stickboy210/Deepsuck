@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSuck - 探索未界之域</title>
+    <link rel="icon" href="./logo.svg" type="image/svg+xml">
+    <style>
+        :root {
+            --deepseek-blue: #1752b3;
+            --bg-color: #f9f9f9;
+            --error-color: #d9534f;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .welcome-text {
+            flex: 1;
+            text-align: center;
+        }
+
+        .welcome-title {
+            font-size: 1.5rem;
+            margin: 0;
+            color: var(--deepseek-blue);
+        }
+
+        .welcome-subtitle {
+            font-size: 0.9rem;
+            color: #666;
+            margin: 5px 0 0;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin-right: 20px;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            padding: 15px;
+        }
+
+        .chat-history {
+            height: 60vh;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 8px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background: var(--deepseek-blue);
+            color: white;
+            margin-left: auto;
+        }
+
+        .bot-message {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            background: #f7d7d7;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            max-width: 80%;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .upload-btn, .submit-btn {
+            background: var(--deepseek-blue);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .upload-btn:hover, .submit-btn:hover {
+            opacity: 0.9;
+        }
+
+        .upload-btn:disabled, .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .action-btn {
+            background: #e0e0e0;
+            color: #333;
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn img {
+            vertical-align: middle; /* 使图标和文字垂直居中 */
+            margin-bottom: 2px; /* 微调图标位置 */
+        }
+
+        .action-btn.active {
+            background: var(--deepseek-blue);
+            color: white;
+        }
+
+        .loading-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--deepseek-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .file-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 480px) {
+            .logo {
+                margin-bottom: 15px;
+            }
+
+            .chat-container {
+                padding: 10px;
+            }
+
+            .chat-history {
+                height: 50vh;
+            }
+
+            .message {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+
+            input {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+
+            .upload-btn, .submit-btn {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+
+            .action-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .loading-spinner {
+                width: 16px;
+                height: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="./logo.svg" alt="DeepSuck" class="logo">
+            <div class="welcome-text">
+                <h1 class="welcome-title">我是DeepSuck，很高兴见到你！</h1>
+                <p class="welcome-subtitle">我可以帮你写代码、读文件、写作各种创意内容，请把你的任务交给我吧～</p>
+            </div>
+        </div>
+        <div class="chat-container">
+            <div class="chat-history" id="chatHistory"></div>
+            <form id="chatForm">
+                <div class="input-area">
+                    <input type="file" id="fileInput" hidden accept="*">
+                    <button type="button" class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        上传文件
+                    </button>
+                    <input 
+                        type="text" 
+                        id="userInput" 
+                        placeholder="输入你的问题..." 
+                        autocomplete="off"
+                        required
+                    >
+                    <button type="submit" class="submit-btn" id="submitBtn">提问</button>
+                </div>
+                <div class="action-buttons">
+                    <button type="button" class="action-btn" id="deepThinkBtn">
+                    <img src="./原子.svg" alt="深度思考" style="width: 16px; height: 16px;">
+                    深度思考(S1)</button>
+                      
+                    <button type="button" class="action-btn" id="webSearchBtn">
+                    <img src="./网络.svg" alt="联网搜索" style="width: 16px; height: 16px;">
+                    联网搜索</button>
+                      
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('chatForm');
+        const input = document.getElementById('userInput');
+        const chatHistory = document.getElementById('chatHistory');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const question = input.value.trim();
+            if (!question) return;
+
+            input.disabled = true;
+            submitBtn.disabled = true;
+
+            addMessage(question, 'user');
+
+            const delaySeconds = Math.floor(Math.random() * 10) + 1;
+            const delay = delaySeconds * 1000;
+
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading-container';
+            loadingDiv.innerHTML = `
+                <span>思考中...</span>
+                <div class="loading-spinner"></div>
+            `;
+            chatHistory.appendChild(loadingDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            setTimeout(() => {
+                chatHistory.removeChild(loadingDiv);
+
+                // 判断是否开启了深度思考
+                const isDeepThink = document.getElementById('deepThinkBtn').classList.contains('active');
+                const thinkType = isDeepThink ? '深度思考' : '思考';
+
+                addMessage(`已${thinkType} ${delaySeconds} 秒`, 'bot');
+                addMessage('服务器繁忙，请稍后再试', 'bot');
+
+                input.value = '';
+                input.disabled = false;
+                submitBtn.disabled = false;
+                input.focus();
+            }, delay);
+        });
+
+        function addMessage(content, type) {
+            const div = document.createElement('div');
+            div.className = `message ${type}-message`;
+            div.textContent = content;
+            chatHistory.appendChild(div);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function addErrorMessage(content) {
+            const div = document.createElement('div');
+            div.className = 'error-message';
+            div.textContent = content;
+            chatHistory.appendChild(div);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const allowedMimeTypes = [
+                'image/jpeg',
+                'image/png',
+                'image/gif',
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            ];
+
+            const mimeType = file.type;
+
+            if (!allowedMimeTypes.includes(mimeType)) {
+                addErrorMessage('文件解析失败！仅支持上传图片（JPEG/PNG/GIF）、PDF和Word文档。');
+                e.target.value = ''; // 清空文件上传输入框
+                return;
+            }
+
+            const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+            addMessage(`已上传文件：${file.name} (${fileSizeMB}MB)`, 'user');
+
+            const delay = 1000 + (fileSizeMB * 500);
+            const loadingDiv = createLoading();
+
+            setTimeout(() => {
+                chatHistory.removeChild(loadingDiv);
+                addMessage(`文件解析完成（耗时${delay/1000}秒）`, 'bot');
+                
+                e.target.value = '';
+            }, delay);
+        });
+
+        function createLoading() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading-container';
+            loadingDiv.innerHTML = `
+                <span>解析文件中...</span>
+                <div class="loading-spinner" style="border-top-color: #4CAF50;"></div>
+            `;
+            chatHistory.appendChild(loadingDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            return loadingDiv;
+        }
+
+        // 新增按钮交互逻辑
+        document.getElementById('deepThinkBtn').addEventListener('click', function() {
+            this.classList.toggle('active');
+        });
+
+        document.getElementById('webSearchBtn').addEventListener('click', function() {
+            this.classList.toggle('active');
+        });
+    </script>
+</body>
+</html>
