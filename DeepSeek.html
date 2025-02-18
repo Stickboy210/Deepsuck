@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSuck - 探索未界之域</title>
+    <link rel="icon" href="./logo.svg" type="image/svg+xml">
+    <style>
+        :root {
+            --deepseek-blue: #1752b3;
+            --bg-color: #f9f9f9;
+            --error-color: #d9534f;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            width: 100%;
+            max-width: 180px;
+            margin-bottom: 20px;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            padding: 15px;
+        }
+
+        .chat-history {
+            height: 60vh;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 8px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background: var(--deepseek-blue);
+            color: white;
+            margin-left: auto;
+        }
+
+        .bot-message {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            background: #f7d7d7;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            max-width: 80%;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        button {
+            background: var(--deepseek-blue);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--deepseek-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .upload-btn {
+            background: #4CAF50;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #fileInput {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 480px) {
+            .logo {
+                margin-bottom: 15px;
+            }
+
+            .chat-container {
+                padding: 10px;
+            }
+
+            .chat-history {
+                height: 50vh;
+            }
+
+            .message {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+
+            input {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+
+            button {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+
+            .loading-spinner {
+                width: 16px;
+                height: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="./logo.svg" alt="DeepSuck" class="logo">
+        <div class="chat-container">
+            <div class="chat-history" id="chatHistory"></div>
+            <form id="chatForm">
+                <div class="input-area">
+                    <input type="file" id="fileInput" hidden accept="*">
+                    <button type="button" class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        上传文件
+                    </button>
+                    <input 
+                        type="text" 
+                        id="userInput" 
+                        placeholder="输入你的问题..." 
+                        autocomplete="off"
+                        required
+                    >
+                    <button type="submit" id="submitBtn">提问</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('chatForm');
+        const input = document.getElementById('userInput');
+        const chatHistory = document.getElementById('chatHistory');
+        const submitBtn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const question = input.value.trim();
+            if (!question) return;
+
+            input.disabled = true;
+            submitBtn.disabled = true;
+
+            addMessage(question, 'user');
+
+            const delaySeconds = Math.floor(Math.random() * 10) + 1;
+            const delay = delaySeconds * 1000;
+
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading-container';
+            loadingDiv.innerHTML = `
+                <span>思考中...</span>
+                <div class="loading-spinner"></div>
+            `;
+            chatHistory.appendChild(loadingDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            setTimeout(() => {
+                chatHistory.removeChild(loadingDiv);
+                
+                addMessage(`已深度思考 ${delaySeconds} 秒`, 'bot');
+                addMessage('服务器繁忙，请稍后再试', 'bot');
+
+                input.value = '';
+                input.disabled = false;
+                submitBtn.disabled = false;
+                input.focus();
+            }, delay);
+        });
+
+        function addMessage(content, type) {
+            const div = document.createElement('div');
+            div.className = `message ${type}-message`;
+            div.textContent = content;
+            chatHistory.appendChild(div);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        function addErrorMessage(content) {
+            const div = document.createElement('div');
+            div.className = 'error-message';
+            div.textContent = content;
+            chatHistory.appendChild(div);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const allowedMimeTypes = [
+                'image/jpeg',
+                'image/png',
+                'image/gif',
+                'application/pdf',
+                'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            ];
+
+            const mimeType = file.type;
+
+            if (!allowedMimeTypes.includes(mimeType)) {
+                addErrorMessage('文件解析失败！仅支持上传图片（JPEG/PNG/GIF）、PDF和Word文档。');
+                e.target.value = ''; // 清空文件上传输入框
+                return;
+            }
+
+            const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+            addMessage(`已上传文件：${file.name} (${fileSizeMB}MB)`, 'user');
+
+            const delay = 1000 + (fileSizeMB * 500);
+            const loadingDiv = createLoading();
+
+            setTimeout(() => {
+                chatHistory.removeChild(loadingDiv);
+                addMessage(`文件解析完成（耗时${delay/1000}秒）`, 'bot');
+                
+                e.target.value = '';
+            }, delay);
+        });
+
+        function createLoading() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading-container';
+            loadingDiv.innerHTML = `
+                <span>解析文件中...</span>
+                <div class="loading-spinner" style="border-top-color: #4CAF50;"></div>
+            `;
+            chatHistory.appendChild(loadingDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            return loadingDiv;
+        }
+    </script>
+</body>
+</html>
